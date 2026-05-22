@@ -16,6 +16,7 @@ import QuizInfo from "./pages/QuizInfo";
 import QuizStartPage from "./pages/QuizStartPage";
 import SuccessSubmit from "./pages/SuccessSubmit";
 import AssessmentResultPage from "./pages/AssessmentResultPage";
+import MyDocuments from "./pages/MyDocuments";
 
 const AppRouter = createBrowserRouter([
   // Landing page at root
@@ -82,6 +83,10 @@ const AppRouter = createBrowserRouter([
       {
         path: "quiz/assessment-result",
         element: <AssessmentResultPage />,
+      },
+      {
+        path: "documents",
+        element: <MyDocuments />,
       },
     ],
   },

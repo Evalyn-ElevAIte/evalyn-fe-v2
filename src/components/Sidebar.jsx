@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaHistory, FaHome } from "react-icons/fa";
 import { GoBook } from "react-icons/go";
 import { LuSettings } from "react-icons/lu";
+import { FiFileText } from "react-icons/fi";
 import { RiArrowUpSFill, RiArrowDownSFill } from "react-icons/ri";
 import { BsFillPersonFill } from "react-icons/bs";
 import { FiLogOut } from "react-icons/fi";
@@ -186,6 +187,19 @@ const Sidebar = ({ isExpanded, setIsExpanded }) => {
               ))}
             </div>
           )}
+          <NavLink
+            to="/documents"
+            className={({ isActive }) =>
+              `w-full flex items-center gap-4 pl-8 py-3 text-sm rounded-r-full transition-all duration-200 ${
+                isActive
+                  ? "bg-white text-blue font-bold border border-[#F2AA32]"
+                  : "hover:bg-white hover:shadow-sm text-gray-600"
+              }`
+            }
+          >
+            <FiFileText size={18} />
+            {isExpanded && <span>My Documents</span>}
+          </NavLink>
         </nav>
       </div>
 
