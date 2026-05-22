@@ -2,291 +2,252 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserQuizzes, getUserQuizzesCreator } from "../services/user";
 import LoadingScreen from "../components/LoadingScreen";
+import { BookOpen, Users, Plus, Search, ChevronLeft, ChevronRight, ArrowRight, FileText } from "lucide-react";
 
 const STATUS_STYLE = {
   Published: "bg-blue-100 text-blue-600",
-  Done: "bg-green-100 text-green-600",
+  Done: "bg-emerald-100 text-emerald-600",
   Unfinished: "bg-red-100 text-red-600",
-  Submitted: "bg-yellow-100 text-yellow-600",
-  Graded: "bg-green-100 text-green-600",
+  Submitted: "bg-amber-100 text-amber-600",
+  Graded: "bg-emerald-100 text-emerald-600",
 };
+
+const QuizCard = ({ quiz, onView }) => (
+  <div className="group bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col">
+    <div className="flex justify-between items-start mb-3">
+      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+        <BookOpen size={18} className="text-blue" />
+      </div>
+      {quiz.status && (
+        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLE[quiz.status] ?? "bg-gray-100 text-gray-600"}`}>
+          {quiz.status}
+        </span>
+      )}
+    </div>
+    <h3 className="text-sm font-semibold text-gray-800 mb-1 line-clamp-2 flex-1">{quiz.title}</h3>
+    {quiz.created && (
+      <p className="text-xs text-gray-400 mb-1">Created: {quiz.created}</p>
+    )}
+    {quiz.submissions != null && (
+      <p className="text-xs text-gray-400 mb-4">{quiz.submissions} submissions</p>
+    )}
+    <button
+      onClick={() => onView(quiz.id)}
+      className="inline-flex items-center gap-1.5 text-blue text-sm font-medium hover:gap-2.5 transition-all mt-auto"
+    >
+      View Quiz <ArrowRight size={14} />
+    </button>
+  </div>
+);
+
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex justify-center items-center gap-2 mt-4 mb-8">
+      <button
+        onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+        disabled={currentPage === 1}
+        className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition"
+      >
+        <ChevronLeft size={16} />
+      </button>
+      {[...Array(totalPages)].map((_, i) => (
+        <button
+          key={i}
+          onClick={() => onPageChange(i + 1)}
+          className={`w-8 h-8 rounded-xl text-sm font-medium transition ${
+            currentPage === i + 1
+              ? "bg-blue text-white shadow-sm"
+              : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          {i + 1}
+        </button>
+      ))}
+      <button
+        onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
+        disabled={currentPage === totalPages}
+        className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition"
+      >
+        <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+};
+
+const EmptyState = ({ message, sub }) => (
+  <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+      <FileText size={24} className="text-gray-400" />
+    </div>
+    <p className="text-gray-500 text-sm font-medium">{message}</p>
+    {sub && <p className="text-gray-400 text-xs mt-1">{sub}</p>}
+  </div>
+);
 
 const MyQuizzes = () => {
   const navigate = useNavigate();
-
   const [isLoading, setIsLoading] = useState(true);
-
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPageMyQuizzes, setCurrentPageMyQuizzes] = useState(1);
   const [currentPageEnrolled, setCurrentPageEnrolled] = useState(1);
   const quizzesPerPage = 3;
-
   const [myQuizzes, setMyQuizzes] = useState([]);
   const [enrolledQuizzes, setEnrolledQuizzes] = useState([]);
 
-  const viewQuizHandle = (quiz_id) => {
-    navigate(`/quiz-info/${quiz_id}`);
-  };
+  const viewQuizHandle = (quiz_id) => navigate(`/quiz-info/${quiz_id}`);
 
-  const fetchMyQuizzes = async () => {
-    try {
-      const myQuizzesResponse = await getUserQuizzes();
-      if (myQuizzesResponse.status === 200) {
-        const data = myQuizzesResponse.data;
-        if (Array.isArray(data)) {
-          setEnrolledQuizzes(data);
-        } else {
-          setEnrolledQuizzes([]);
-          console.warn("No my quizzes found:", data.detail);
-        }
-      }
-    } catch (error) {
-      console.log("error :", error);
-    }
-  };
-
-  const fetchMyQuizzesCreator = async () => {
-    try {
-      const myQuizzesCreatorResponse = await getUserQuizzesCreator();
-      if (myQuizzesCreatorResponse.status === 200) {
-        const data = myQuizzesCreatorResponse.data;
-        if (Array.isArray(data)) {
-          setMyQuizzes(data);
-        } else {
-          setMyQuizzes([]);
-          console.warn("No enrolled quizzes found:", data.detail);
-        }
-      }
-    } catch (error) {
-      console.log("error :", error);
-    }
-  };
   useEffect(() => {
     const loadQuizzes = async () => {
       setIsLoading(true);
       try {
-        await Promise.all([fetchMyQuizzes(), fetchMyQuizzesCreator()]);
+        const [myQuizzesResponse, myQuizzesCreatorResponse] = await Promise.all([
+          getUserQuizzes(),
+          getUserQuizzesCreator(),
+        ]);
+        if (myQuizzesResponse.status === 200) {
+          setEnrolledQuizzes(Array.isArray(myQuizzesResponse.data) ? myQuizzesResponse.data : []);
+        }
+        if (myQuizzesCreatorResponse.status === 200) {
+          setMyQuizzes(Array.isArray(myQuizzesCreatorResponse.data) ? myQuizzesCreatorResponse.data : []);
+        }
       } catch (error) {
         console.error("Failed to fetch quizzes:", error);
       } finally {
         setIsLoading(false);
       }
     };
-
     loadQuizzes();
   }, []);
-  const totalPagesMyQuizzes = Math.ceil(myQuizzes.length / quizzesPerPage);
-  const totalPagesEnrolled = Math.ceil(enrolledQuizzes.length / quizzesPerPage);
 
-  useEffect(() => {
-    if (currentPageMyQuizzes > totalPagesMyQuizzes && totalPagesMyQuizzes > 0) {
-      setCurrentPageMyQuizzes(1);
-    }
-  }, [myQuizzes]);
+  const filteredMyQuizzes = myQuizzes.filter((q) =>
+    q.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredEnrolled = enrolledQuizzes.filter((q) =>
+    q.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  useEffect(() => {
-    if (currentPageEnrolled > totalPagesEnrolled && totalPagesEnrolled > 0) {
-      setCurrentPageEnrolled(1);
-    }
-  }, [enrolledQuizzes]);
+  const totalPagesMyQuizzes = Math.ceil(filteredMyQuizzes.length / quizzesPerPage);
+  const totalPagesEnrolled = Math.ceil(filteredEnrolled.length / quizzesPerPage);
 
-  const paginate = (quizzes, currentPage) => {
-    const indexOfLast = currentPage * quizzesPerPage;
-    const indexOfFirst = indexOfLast - quizzesPerPage;
-    return quizzes.slice(indexOfFirst, indexOfLast);
-  };
-
-  const createQuizHandle = () => {
-    navigate(`/create`);
+  const paginate = (items, page) => {
+    const start = (page - 1) * quizzesPerPage;
+    return items.slice(start, start + quizzesPerPage);
   };
 
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="">
-      <div className="bg-blue-50 px-6 py-12 rounded-t-lg">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2 pt-8">
-          My Quizzes
-        </h2>
-        <p className="text-sm text-gray-600">
-          Manage your quizzes and view student submissions.
-        </p>
-      </div>
-
-      <div className="flex justify-between items-center">
-        <input
-          type="text"
-          placeholder="Search quizzes..."
-          className="w-full max-w-md border my-6 border-gray-300 rounded-lg px-4 py-2 text-sm mb-6"
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue to-blue-700 px-6 sm:px-10 py-10">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }}
         />
-        <button
-          onClick={createQuizHandle}
-          className="bg-blue hover:bg-blue-600 text-white px-6 py-3 h-14 rounded-xl font-medium cursor-pointer"
-        >
-          + Create Quiz
-        </button>
-      </div>
-
-      <h2 className="text-base font-semibold text-gray-700 mb-2">My Quizzes</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        {paginate(myQuizzes, currentPageMyQuizzes).length > 0 ? (
-          paginate(myQuizzes, currentPageMyQuizzes).map((quiz, index) => (
-            <div
-              key={index}
-              className="border border-gray-200 rounded-3xl p-8 bg-white shadow-sm"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-base font-semibold text-gray-800">
-                  {quiz.title}
-                </h3>
-                {quiz.status && (
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      STATUS_STYLE[quiz.status]
-                    }`}
-                  >
-                    {quiz.status}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-500 mb-1">
-                Created: {quiz.created}
-              </p>
-              <p className="text-sm text-gray-500 mb-3">
-                {quiz.submissions} submissions
-              </p>
-              <button
-                onClick={() => viewQuizHandle(quiz.id)}
-                className="bg-blue text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-all cursor-pointer"
-              >
-                View Quiz
-              </button>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500 col-span-full text-center">
-            No quizzes found.
+        <div className="relative">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">My Quizzes</h2>
+          <p className="text-blue-100 text-sm">
+            Manage your quizzes and track student submissions.
           </p>
-        )}
+          <div className="flex gap-4 mt-4">
+            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
+              <div className="text-xl font-bold text-white">{myQuizzes.length}</div>
+              <div className="text-blue-100 text-xs">Created</div>
+            </div>
+            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
+              <div className="text-xl font-bold text-white">{enrolledQuizzes.length}</div>
+              <div className="text-blue-100 text-xs">Enrolled</div>
+            </div>
+          </div>
+        </div>
+        <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white opacity-5" />
       </div>
 
-      {totalPagesMyQuizzes > 1 && (
-        <div className="flex justify-center items-center gap-2 mb-8">
+      <div className="px-6 sm:px-10 py-6">
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-8">
+          <div className="relative flex-1 max-w-sm">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search quizzes..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPageMyQuizzes(1);
+                setCurrentPageEnrolled(1);
+              }}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue/30 focus:border-blue/50 shadow-sm"
+            />
+          </div>
           <button
-            onClick={() =>
-              setCurrentPageMyQuizzes((prev) => Math.max(prev - 1, 1))
-            }
-            disabled={currentPageMyQuizzes === 1}
-            className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-300 cursor-pointer"
+            onClick={() => navigate("/create")}
+            className="inline-flex items-center gap-2 bg-blue hover:bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-sm whitespace-nowrap"
           >
-            &lt;
-          </button>
-          {[...Array(totalPagesMyQuizzes)].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPageMyQuizzes(i + 1)}
-              className={`px-3 py-1 border rounded ${
-                currentPageMyQuizzes === i + 1
-                  ? "bg-blue text-white border-blue"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-300 cursor-pointer"
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() =>
-              setCurrentPageMyQuizzes((prev) =>
-                Math.min(prev + 1, totalPagesMyQuizzes)
-              )
-            }
-            disabled={currentPageMyQuizzes === totalPagesMyQuizzes}
-            className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-300 cursor-pointer"
-          >
-            &gt;
+            <Plus size={16} /> Create Quiz
           </button>
         </div>
-      )}
 
-      <h2 className="text-base font-semibold text-gray-700 mb-2">Enrolled</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        {paginate(enrolledQuizzes, currentPageEnrolled).length > 0 ? (
-          paginate(enrolledQuizzes, currentPageEnrolled).map((quiz, index) => (
-            <div
-              key={index}
-              className="border border-gray-200 rounded-3xl p-8 bg-white shadow-sm"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-base font-semibold text-gray-800">
-                  {quiz.title}
-                </h3>
-                {quiz.status && (
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      STATUS_STYLE[quiz.status]
-                    }`}
-                  >
-                    {quiz.status}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-500 mb-1">
-                Created: {quiz.created}
-              </p>
-              <p className="text-sm text-gray-500 mb-3">
-                {quiz.submissions} submissions
-              </p>
-              <button
-                onClick={() => viewQuizHandle(quiz.id)}
-                className="bg-blue text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-all cursor-pointer"
-              >
-                View Quiz
-              </button>
+        {/* My Quizzes Section */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+              <BookOpen size={16} className="text-blue" />
             </div>
-          ))
-        ) : (
-          <p className="text-gray-500 col-span-full text-center">
-            No enrolled quizzes found.
-          </p>
-        )}
-      </div>
-
-      {totalPagesEnrolled > 1 && (
-        <div className="flex justify-center items-center gap-2">
-          <button
-            onClick={() =>
-              setCurrentPageEnrolled((prev) => Math.max(prev - 1, 1))
-            }
-            disabled={currentPageEnrolled === 1}
-            className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-300 cursor-pointer"
-          >
-            &lt;
-          </button>
-          {[...Array(totalPagesEnrolled)].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPageEnrolled(i + 1)}
-              className={`px-3 py-1 border rounded ${
-                currentPageEnrolled === i + 1
-                  ? "bg-blue text-white border-blue"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-300 cursor-pointer"
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() =>
-              setCurrentPageEnrolled((prev) =>
-                Math.min(prev + 1, totalPagesEnrolled)
-              )
-            }
-            disabled={currentPageEnrolled === totalPagesEnrolled}
-            className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-300 cursor-pointer"
-          >
-            &gt;
-          </button>
+            <h2 className="text-base font-semibold text-gray-800">Quizzes I Created</h2>
+            <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 font-medium">
+              {filteredMyQuizzes.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {paginate(filteredMyQuizzes, currentPageMyQuizzes).length > 0 ? (
+              paginate(filteredMyQuizzes, currentPageMyQuizzes).map((quiz, index) => (
+                <QuizCard key={quiz.id ?? index} quiz={quiz} onView={viewQuizHandle} />
+              ))
+            ) : (
+              <EmptyState
+                message={searchQuery ? "No quizzes match your search." : "No quizzes created yet."}
+                sub={!searchQuery ? "Click \"Create Quiz\" to get started!" : undefined}
+              />
+            )}
+          </div>
+          <Pagination
+            currentPage={currentPageMyQuizzes}
+            totalPages={totalPagesMyQuizzes}
+            onPageChange={setCurrentPageMyQuizzes}
+          />
         </div>
-      )}
+
+        {/* Enrolled Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-orange/10 flex items-center justify-center">
+              <Users size={16} className="text-orange" />
+            </div>
+            <h2 className="text-base font-semibold text-gray-800">Enrolled Quizzes</h2>
+            <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 font-medium">
+              {filteredEnrolled.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {paginate(filteredEnrolled, currentPageEnrolled).length > 0 ? (
+              paginate(filteredEnrolled, currentPageEnrolled).map((quiz, index) => (
+                <QuizCard key={quiz.id ?? index} quiz={quiz} onView={viewQuizHandle} />
+              ))
+            ) : (
+              <EmptyState
+                message={searchQuery ? "No enrolled quizzes match your search." : "No enrolled quizzes yet."}
+                sub={!searchQuery ? "Join a quiz from the Home page to get started!" : undefined}
+              />
+            )}
+          </div>
+          <Pagination
+            currentPage={currentPageEnrolled}
+            totalPages={totalPagesEnrolled}
+            onPageChange={setCurrentPageEnrolled}
+          />
+        </div>
+      </div>
     </div>
   );
 };

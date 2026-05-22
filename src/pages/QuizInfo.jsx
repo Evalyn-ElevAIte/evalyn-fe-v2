@@ -6,28 +6,29 @@ import GradesTab from "./tabs/GradesTab";
 import { getQuizById } from "../services/quiz";
 import LoadingScreen from "../components/LoadingScreen";
 import { getAllStudentsAssessments } from "../services/assessments";
+import { Info, Users, BarChart2 } from "lucide-react";
+
+const TAB_META = {
+  info: { label: "Quiz Info", icon: Info },
+  people: { label: "People", icon: Users },
+  grades: { label: "My Grades", icon: BarChart2 },
+};
 
 const QuizInfo = () => {
   const { quiz_id } = useParams();
   const [quizData, setQuizData] = useState(null);
   const [people, setPeople] = useState([]);
-
   const [activeTab, setActiveTab] = useState("info");
   const [availableTabs, setAvailableTabs] = useState([]);
-
-  // const [isLoading, setIsLoading] = useState(false);
 
   const fetchPeople = async () => {
     try {
       const peopleResponse = await getAllStudentsAssessments(quiz_id);
       if (peopleResponse.status === 200) {
         setPeople(peopleResponse.data.assessments);
-        console.log("peopleResponse.data: ", peopleResponse.data.assessments);
       }
     } catch (error) {
       console.error("Failed to load people list:", error);
-    } finally {
-      // setLoading(false);
     }
   };
 
@@ -36,12 +37,12 @@ const QuizInfo = () => {
       const response = await getQuizById(quiz_id);
       if (response.status === 200) {
         setQuizData(response.data);
-        console.log("quizData: ", response.data);
       }
     } catch (error) {
       console.error("Failed to fetch quiz:", error);
     }
   };
+
   useEffect(() => {
     fetchQuiz();
     fetchPeople();
@@ -49,16 +50,12 @@ const QuizInfo = () => {
 
   useEffect(() => {
     if (!quizData) return;
-
     if (!quizData.status && quizData.completed !== null) {
-      // Teacher
-      setAvailableTabs(["info", "people"]);//grades is saved first
-    } else if (quizData.status === "unfinished") {
       setAvailableTabs(["info", "people"]);
-    } else if (quizData.status === "submited") {
+    } else if (quizData.status === "unfinished" || quizData.status === "submited") {
       setAvailableTabs(["info", "people"]);
     } else if (quizData.status === "graded") {
-      setAvailableTabs(["info", "people", "grades"]); //grades is saved first
+      setAvailableTabs(["info", "people", "grades"]);
     } else {
       setAvailableTabs(["info"]);
     }
@@ -66,9 +63,7 @@ const QuizInfo = () => {
 
   const getStatus = () => {
     if (!quizData) return "";
-    return (
-      quizData.status || (quizData.completed === true ? "done" : "published")
-    );
+    return quizData.status || (quizData.completed === true ? "done" : "published");
   };
 
   const renderTab = () => {
@@ -93,34 +88,34 @@ const QuizInfo = () => {
     }
   };
 
-  const tabLabel = {
-    info: "Quiz Info",
-    people: "People",
-    grades: "Grades",
-  };
-
-  // if (isLoading || !quizData) {
-  //   return <LoadingScreen />;
-  // }
-
   return (
-    <div className="quiz-info pt-12">
-      <div className="flex border-b border-gray-200">
-        {availableTabs.map((tabKey) => (
-          <button
-            key={tabKey}
-            onClick={() => setActiveTab(tabKey)}
-            className={`px-4 py-2 text-lg font-semibold border-b-3 transition-colors duration-200 ${
-              activeTab === tabKey
-                ? "border-blue text-blue-600"
-                : "border-transparent text-gray-300 hover:text-blue-600 cursor-pointer"
-            }`}
-          >
-            {tabLabel[tabKey]}
-          </button>
-        ))}
+    <div className="min-h-screen bg-gray-50 pt-6">
+      {/* Tab bar */}
+      <div className="bg-white border-b border-gray-100 shadow-sm sticky top-[80px] z-10">
+        <div className="px-4 sm:px-8 flex items-center gap-1">
+          {availableTabs.map((tabKey) => {
+            const Icon = TAB_META[tabKey]?.icon;
+            const label = TAB_META[tabKey]?.label ?? tabKey;
+            return (
+              <button
+                key={tabKey}
+                onClick={() => setActiveTab(tabKey)}
+                className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-all duration-150 cursor-pointer ${
+                  activeTab === tabKey
+                    ? "border-blue text-blue"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {Icon && <Icon size={15} />}
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
-      <div className="p-4 bg-white shadow rounded-b-lg">{renderTab()}</div>
+
+      {/* Tab content */}
+      <div className="p-0">{renderTab()}</div>
     </div>
   );
 };

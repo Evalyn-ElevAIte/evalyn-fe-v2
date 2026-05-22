@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, Clock, CheckCircle, Send, Edit } from "lucide-react";
+import { FileText, Clock, CheckCircle, Send, ArrowRight, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getAllUserQuizzes } from "../services/user";
 import LoadingScreen from "../components/LoadingScreen";
@@ -30,13 +30,12 @@ const Activities = () => {
   const navigate = useNavigate();
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
 
   const fetchActivities = async () => {
     setIsLoading(true);
     try {
       const activitiesResponse = await getAllUserQuizzes();
-      console.log("activitiesResponse: ", activitiesResponse);
-
       if (
         activitiesResponse.status === 200 &&
         Array.isArray(activitiesResponse.data)
@@ -65,173 +64,198 @@ const Activities = () => {
     fetchActivities();
   }, []);
 
-  const grouped = activities.reduce((acc, curr) => {
-    acc[curr.day] = acc[curr.day] || [];
-    acc[curr.day].push(curr);
-    return acc;
-  }, {});
-
-  const getIconAndColor = (item) => {
-    let iconComponent;
-    let iconBgColorClass;
-    let iconColorClass = "text-white";
-    let descriptionText;
-    let messageText;
-
+  const getActivityMeta = (item) => {
     const isPublished = item.status === null && item.completed === false;
     const isDone = item.status === null && item.completed === true;
     const isUnfinished = item.status === "unfinished";
     const isSubmitted = item.status === "submited";
     const isGraded = item.status === "graded";
 
-    if (isPublished) {
-      iconComponent = <FileText size={48} />;
-      iconBgColorClass = "bg-blue";
-      descriptionText = "You created a new quiz:";
-      messageText = "Quiz created! Keep an eye on it regularly.";
-    } else if (isDone) {
-      iconComponent = <CheckCircle size={48} />;
-      iconBgColorClass = "bg-green-500";
-      descriptionText = "You created a new quiz:";
-      messageText = "All the participant already finish the quiz.";
-    } else if (isUnfinished) {
-      iconComponent = <Clock size={48} />;
-      iconBgColorClass = "bg-orange-500";
-      descriptionText = "New submission:";
-      messageText = "New quiz is out—make sure to complete it on time!";
-    } else if (isSubmitted) {
-      iconComponent = <Send size={42} className="relative top-0.5 right-0.7" />;
-      iconBgColorClass = "bg-purple-500";
-      descriptionText = "You have submitted quiz:";
-      messageText = "Your score is coming soon, hang tight!";
-    } else if (isGraded) {
-      iconComponent = <CheckCircle size={48} />;
-      iconBgColorClass = "bg-green-500";
-      descriptionText = "Your submission has just been graded:";
-      messageText = "Your submission has just graded, check it out!";
-    } else {
-      iconComponent = <FileText size={48} />;
-      iconBgColorClass = "bg-gray-100";
-      iconColorClass = "text-gray-400";
-      descriptionText = "Activity:";
-      messageText = "";
-    }
-
+    if (isPublished) return {
+      icon: <FileText size={18} />,
+      iconBg: "bg-blue-100 text-blue-600",
+      badge: "bg-blue-100 text-blue-700",
+      badgeLabel: "Published",
+      description: "You created a new quiz",
+      message: "Quiz is live — keep an eye on submissions.",
+      type: "published",
+    };
+    if (isDone) return {
+      icon: <CheckCircle size={18} />,
+      iconBg: "bg-emerald-100 text-emerald-600",
+      badge: "bg-emerald-100 text-emerald-700",
+      badgeLabel: "Completed",
+      description: "Quiz completed",
+      message: "All participants have finished the quiz.",
+      type: "done",
+    };
+    if (isUnfinished) return {
+      icon: <Clock size={18} />,
+      iconBg: "bg-amber-100 text-amber-600",
+      badge: "bg-amber-100 text-amber-700",
+      badgeLabel: "Pending",
+      description: "New quiz available",
+      message: "Make sure to complete it on time!",
+      type: "unfinished",
+    };
+    if (isSubmitted) return {
+      icon: <Send size={18} />,
+      iconBg: "bg-purple-100 text-purple-600",
+      badge: "bg-purple-100 text-purple-700",
+      badgeLabel: "Submitted",
+      description: "You submitted this quiz",
+      message: "Your score is coming soon, hang tight!",
+      type: "submitted",
+    };
+    if (isGraded) return {
+      icon: <CheckCircle size={18} />,
+      iconBg: "bg-emerald-100 text-emerald-600",
+      badge: "bg-emerald-100 text-emerald-700",
+      badgeLabel: "Graded",
+      description: "Submission graded",
+      message: "Your submission has been graded. Check it out!",
+      type: "graded",
+    };
     return {
-      icon: iconComponent,
-      iconBgColor: iconBgColorClass,
-      iconColor: iconColorClass,
-      description: descriptionText,
-      message: messageText,
+      icon: <FileText size={18} />,
+      iconBg: "bg-gray-100 text-gray-500",
+      badge: "bg-gray-100 text-gray-600",
+      badgeLabel: "Activity",
+      description: "Activity",
+      message: "",
+      type: "unknown",
     };
   };
-  const viewQuizHandle = (quiz_id) => {
-    navigate(`/quiz-info/${quiz_id}`);
-  };
+
+  const viewQuizHandle = (quiz_id) => navigate(`/quiz-info/${quiz_id}`);
+
+  const FILTER_OPTIONS = [
+    { value: "all", label: "All Activities" },
+    { value: "published", label: "Published" },
+    { value: "unfinished", label: "Pending" },
+    { value: "submitted", label: "Submitted" },
+    { value: "graded", label: "Graded" },
+    { value: "done", label: "Completed" },
+  ];
+
+  const filteredActivities = filter === "all"
+    ? activities
+    : activities.filter((item) => getActivityMeta(item).type === filter);
+
+  const grouped = filteredActivities.reduce((acc, curr) => {
+    acc[curr.day] = acc[curr.day] || [];
+    acc[curr.day].push(curr);
+    return acc;
+  }, {});
 
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="pt-8">
-      <div className="bg-blue-50 px-10 py-12 rounded-t-lg">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Recent Activity
-        </h2>
-        <p className="text-sm text-gray-600">
-          Track your latest actions, including unfinished, submitted, and graded
-          submissions.
-        </p>
-      </div>
-      <div className="flex items-center justify-start gap-4 px-4 py-4 bg-white rounded-b-lg shadow-sm">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue to-blue-700 px-6 sm:px-10 py-10">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "radial-gradient(circle at 20% 80%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }}
+        />
         <div className="relative">
-          <select className="block appearance-none w-full bg-white border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded leading-tight focus:outline-none focus:shadow-outline text-sm">
-            <option>All Activities</option>
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-            <svg
-              className="fill-current h-4 w-4"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-            >
-              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-            </svg>
-          </div>
-        </div>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Select date range"
-            className="block w-full bg-white border border-gray-300 hover:border-gray-400 px-4 py-2 rounded leading-tight focus:outline-none focus:shadow-outline text-sm"
-          />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path>
-            </svg>
-          </div>
-        </div>
-      </div>
-      <div className="px-4 py-6">
-        {Object.entries(grouped).length === 0 ? (
-          <p className="text-center text-gray-500">
-            There are no activities to show.
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">Activity</h2>
+          <p className="text-blue-100 text-sm">
+            Track your latest actions — quizzes created, submitted, and graded.
           </p>
+          <div className="flex gap-4 mt-4">
+            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
+              <div className="text-xl font-bold text-white">{activities.length}</div>
+              <div className="text-blue-100 text-xs">Total</div>
+            </div>
+            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
+              <div className="text-xl font-bold text-white">
+                {activities.filter(a => getActivityMeta(a).type === "graded").length}
+              </div>
+              <div className="text-blue-100 text-xs">Graded</div>
+            </div>
+            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
+              <div className="text-xl font-bold text-white">
+                {activities.filter(a => getActivityMeta(a).type === "unfinished").length}
+              </div>
+              <div className="text-blue-100 text-xs">Pending</div>
+            </div>
+          </div>
+        </div>
+        <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white opacity-5" />
+      </div>
+
+      {/* Filter bar */}
+      <div className="bg-white border-b border-gray-100 px-6 sm:px-10 py-3 shadow-sm sticky top-[80px] z-10">
+        <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+          {FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setFilter(opt.value)}
+              className={`whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                filter === opt.value
+                  ? "bg-blue text-white shadow-sm"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Activity list */}
+      <div className="px-6 sm:px-10 py-6">
+        {Object.entries(grouped).length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <Activity size={28} className="text-gray-400" />
+            </div>
+            <p className="text-gray-500 font-medium">No activities to show.</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {filter !== "all" ? "Try selecting a different filter." : "Create or join a quiz to get started!"}
+            </p>
+          </div>
         ) : (
           Object.entries(grouped).map(([day, items]) => (
             <div key={day} className="mb-8">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">
-                {day}
-              </h3>
-              <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 mb-4">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{day}</h3>
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? "s" : ""}</span>
+              </div>
+
+              <div className="space-y-3">
                 {items.map((item, index) => {
-                  const { icon, iconBgColor, iconColor, description, message } =
-                    getIconAndColor(item);
+                  const meta = getActivityMeta(item);
                   return (
                     <div
                       key={index}
-                      className="bg-white rounded-xl border border-gray-100 shadow-sm px-7 py-4 flex flex-col md:flex-row justify-between items-start md:items-center"
+                      className="group bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:shadow-md transition-all duration-200"
                     >
-                      <div className="flex items-start flex-grow">
-                        <div
-                          className={`flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center mr-4 ${iconBgColor} ${iconColor}`}
-                        >
-                          {icon}
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${meta.iconBg}`}>
+                          {meta.icon}
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-800 text-base leading-tight">
-                            {description}
-                            <span className="text-black font-bold">
-                              {item.title}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <p className="text-xs text-gray-500">{meta.description}:</p>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>
+                              {meta.badgeLabel}
                             </span>
-                          </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {message}
-                          </p>
+                          </div>
+                          <p className="font-semibold text-gray-800 text-sm truncate">{item.title}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{meta.message}</p>
                         </div>
                       </div>
 
-                      <div className="flex flex-col md:flex-row items-end md:items-center gap-2 mt-4 md:mt-0 md:ml-4 flex-shrink-0 p-8">
+                      <div className="flex items-center gap-4 flex-shrink-0 ml-14 sm:ml-0">
+                        <span className="text-xs text-gray-400 whitespace-nowrap">{item.time}</span>
                         <button
-                          onClick={() => {
-                            viewQuizHandle(item.id);
-                          }}
-                          className="text-blue hover:text-blue-200 cursor-pointer text-sm font-medium px-2 py-1 rounded transition-colors duration-200"
+                          onClick={() => viewQuizHandle(item.id)}
+                          className="inline-flex items-center gap-1.5 text-blue text-sm font-medium hover:gap-2.5 transition-all whitespace-nowrap"
                         >
-                          View Quiz
+                          View <ArrowRight size={14} />
                         </button>
-                        <span className="text-xs text-gray-400 md:ml-4 whitespace-nowrap">
-                          {item.time}
-                        </span>
                       </div>
                     </div>
                   );

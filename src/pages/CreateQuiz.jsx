@@ -5,6 +5,7 @@ import { creatQuizWithQuestions } from "../services/quiz";
 import { useNavigate } from "react-router-dom";
 import LoadingScreen from "../components/LoadingScreen";
 import { FiZap, FiX, FiPlus, FiTrash2 } from "react-icons/fi";
+import { ChevronDown, ChevronUp, Sparkles, PlusCircle } from "lucide-react";
 import {
   listMyDocuments,
   getDocumentStatus,
@@ -20,7 +21,6 @@ const initialQuestion = {
   rubricMaxScore: 10,
 };
 
-// Map API draft to form question format
 const draftToQuestion = (draft) => {
   const isChoice = draft.type === "MULTI_CHOICE" || draft.options?.length > 0;
   const type =
@@ -69,10 +69,7 @@ const GenerateModal = ({ onClose, onAppend }) => {
   }, []);
 
   const addOutcome = () =>
-    setOutcomes((prev) => [
-      ...prev,
-      { outcome: "", questions_per_outcome: 2 },
-    ]);
+    setOutcomes((prev) => [...prev, { outcome: "", questions_per_outcome: 2 }]);
 
   const removeOutcome = (i) =>
     setOutcomes((prev) => prev.filter((_, idx) => idx !== i));
@@ -84,44 +81,27 @@ const GenerateModal = ({ onClose, onAppend }) => {
 
   const handleGenerate = async () => {
     setError("");
-    if (!selectedDocId) {
-      setError("Please select a document.");
-      return;
-    }
+    if (!selectedDocId) { setError("Please select a document."); return; }
     if (outcomes.some((o) => !o.outcome.trim())) {
-      setError("Please fill in all learning outcome fields.");
-      return;
+      setError("Please fill in all learning outcome fields."); return;
     }
-
     setIsGenerating(true);
-
-    // Ensure document is ready before generating
     try {
       setStatusMsg("Checking document status…");
       const statusRes = await getDocumentStatus(Number(selectedDocId));
       if (statusRes.data.status === "processing") {
-        setError(
-          "Document is still processing. Please wait until it is ready."
-        );
-        setIsGenerating(false);
-        setStatusMsg("");
+        setError("Document is still processing. Please wait until it is ready.");
         return;
       }
       if (statusRes.data.status === "failed") {
-        setError(
-          "Document ingestion failed. Please re-upload the document."
-        );
-        setIsGenerating(false);
-        setStatusMsg("");
+        setError("Document ingestion failed. Please re-upload the document.");
         return;
       }
     } catch {
-      setError("Could not verify document status.");
-      setIsGenerating(false);
-      setStatusMsg("");
-      return;
+      setError("Could not verify document status."); return;
+    } finally {
+      if (error) { setIsGenerating(false); setStatusMsg(""); return; }
     }
-
     try {
       setStatusMsg("Generating questions…");
       const payload = outcomes.map((o) => ({
@@ -132,8 +112,7 @@ const GenerateModal = ({ onClose, onAppend }) => {
       if (res.status === 200) {
         const newQuestions = (res.data.drafts ?? []).map(draftToQuestion);
         if (newQuestions.length === 0) {
-          setError("No questions were generated. Try different outcomes.");
-          return;
+          setError("No questions were generated. Try different outcomes."); return;
         }
         onAppend(newQuestions);
         onClose();
@@ -150,86 +129,71 @@ const GenerateModal = ({ onClose, onAppend }) => {
   const readyDocs = documents.filter((d) => d.status === "ready");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 p-8 relative max-h-[90vh] overflow-y-auto">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
-        >
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer">
           <FiX size={20} />
         </button>
 
-        <h3 className="text-lg font-bold text-gray-900 mb-1">
-          Generate Questions from Document
-        </h3>
-        <p className="text-sm text-gray-500 mb-6">
-          Select a ready document, define learning outcomes, and AI will draft
-          questions for you.
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <Sparkles size={18} className="text-blue" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">AI Question Generator</h3>
+        </div>
+        <p className="text-sm text-gray-500 mb-6 ml-13">
+          Select a document, define learning outcomes, and AI will draft questions for you.
         </p>
 
-        {/* Document selector */}
-        <label className="block text-sm font-semibold text-gray-700 mb-1">
-          Document
-        </label>
+        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Document</label>
         {loadingDocs ? (
           <p className="text-sm text-gray-400 mb-4">Loading documents…</p>
         ) : readyDocs.length === 0 ? (
-          <p className="text-sm text-red-500 mb-4">
-            No ready documents found. Upload a PDF in{" "}
-            <a href="/documents" className="underline text-blue-600">
-              My Documents
-            </a>{" "}
-            first.
-          </p>
+          <div className="bg-red-50 border border-red-100 rounded-xl p-3 mb-4">
+            <p className="text-sm text-red-600">
+              No ready documents found. Upload a PDF in{" "}
+              <a href="/documents" className="underline font-medium">My Documents</a> first.
+            </p>
+          </div>
         ) : (
           <select
-            className="w-full mb-5 px-3 py-2 border border-gray-200 rounded-xl text-sm"
+            className="w-full mb-5 px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30"
             value={selectedDocId}
             onChange={(e) => setSelectedDocId(e.target.value)}
           >
             <option value="">— Select a document —</option>
             {readyDocs.map((d) => (
-              <option key={d.id} value={String(d.id)}>
-                {d.filename}
-              </option>
+              <option key={d.id} value={String(d.id)}>{d.filename}</option>
             ))}
           </select>
         )}
 
-        {/* Outcomes */}
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Learning Outcomes
-        </label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Learning Outcomes</label>
         <div className="space-y-3 mb-4">
           {outcomes.map((o, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <div className="flex-1 space-y-1">
+            <div key={i} className="flex gap-2 items-start bg-gray-50 rounded-xl p-3">
+              <div className="flex-1 space-y-2">
                 <input
                   type="text"
-                  placeholder={`e.g. Define greenhouse gases`}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                  placeholder="e.g. Define greenhouse gases"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue/30"
                   value={o.outcome}
                   onChange={(e) => updateOutcome(i, "outcome", e.target.value)}
                 />
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Questions:</span>
+                  <span className="text-xs text-gray-500">Questions per outcome:</span>
                   <input
                     type="number"
                     min="1"
                     max="5"
-                    className="w-16 px-2 py-1 border border-gray-200 rounded-lg text-sm"
+                    className="w-14 px-2 py-1 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue/30"
                     value={o.questions_per_outcome}
-                    onChange={(e) =>
-                      updateOutcome(i, "questions_per_outcome", e.target.value)
-                    }
+                    onChange={(e) => updateOutcome(i, "questions_per_outcome", e.target.value)}
                   />
                 </div>
               </div>
               {outcomes.length > 1 && (
-                <button
-                  onClick={() => removeOutcome(i)}
-                  className="mt-2 text-red-400 hover:text-red-600 cursor-pointer"
-                >
+                <button onClick={() => removeOutcome(i)} className="mt-2 text-red-400 hover:text-red-600 cursor-pointer">
                   <FiTrash2 size={16} />
                 </button>
               )}
@@ -238,38 +202,169 @@ const GenerateModal = ({ onClose, onAppend }) => {
         </div>
 
         {outcomes.length < 20 && (
-          <button
-            onClick={addOutcome}
-            className="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-5 cursor-pointer"
-          >
+          <button onClick={addOutcome} className="text-sm text-blue hover:text-blue-700 flex items-center gap-1 mb-5 cursor-pointer font-medium">
             <FiPlus size={14} /> Add outcome
           </button>
         )}
 
-        {error && (
-          <p className="text-red-500 text-sm mb-4">{error}</p>
-        )}
-        {statusMsg && (
-          <p className="text-blue-500 text-sm mb-4">{statusMsg}</p>
-        )}
+        {error && <div className="bg-red-50 border border-red-100 rounded-xl p-3 mb-4"><p className="text-red-600 text-sm">{error}</p></div>}
+        {statusMsg && <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-4"><p className="text-blue text-sm">{statusMsg}</p></div>}
 
         <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer"
-          >
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer font-medium">
             Cancel
           </button>
           <button
             onClick={handleGenerate}
             disabled={isGenerating || readyDocs.length === 0}
-            className="px-4 py-2 rounded-xl bg-blue text-white text-sm flex items-center gap-2 hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-blue text-white text-sm flex items-center gap-2 hover:bg-blue-600 disabled:opacity-50 cursor-pointer font-medium transition-colors"
           >
             <FiZap size={14} />
-            {isGenerating ? "Generating…" : "Generate"}
+            {isGenerating ? "Generating…" : "Generate Questions"}
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ── Question Card ─────────────────────────────────────────────────────────────
+const QuestionCard = ({ q, index, onRemove, onChange, onOptionChange, onToggleExpected, onSetSingleExpected }) => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm mb-4">
+      {/* Card header */}
+      <div
+        className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        onClick={() => setCollapsed((c) => !c)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue text-xs font-bold">
+            {index + 1}
+          </div>
+          <span className="text-sm font-medium text-gray-700 line-clamp-1 max-w-xs">
+            {q.question || `Question ${index + 1}`}
+          </span>
+          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full capitalize">
+            {q.type === "single" ? "Single Choice" : q.type === "multiple" ? "Multiple Choice" : "Text"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(index); }}
+            className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            <FiTrash2 size={14} />
+          </button>
+          {collapsed ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronUp size={16} className="text-gray-400" />}
+        </div>
+      </div>
+
+      {!collapsed && (
+        <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
+          {/* Question text */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Question</label>
+            <input
+              type="text"
+              placeholder="Write your question here..."
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:border-blue/40 focus:bg-white transition"
+              value={q.question}
+              onChange={(e) => onChange(index, "question", e.target.value)}
+            />
+          </div>
+
+          {/* Answer type */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Answer Type</label>
+            <select
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition"
+              value={q.type}
+              onChange={(e) => onChange(index, "type", e.target.value)}
+            >
+              <option value="text">Text (free response)</option>
+              <option value="single">Single Choice</option>
+              <option value="multiple">Multiple Choice</option>
+            </select>
+          </div>
+
+          {/* Choice options */}
+          {(q.type === "single" || q.type === "multiple") && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">
+                Answer Options <span className="normal-case text-gray-400 font-normal">(check the correct answer)</span>
+              </label>
+              <div className="space-y-2">
+                {q.options.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <input
+                      type={q.type === "single" ? "radio" : "checkbox"}
+                      name={`expected-${index}`}
+                      className="accent-blue w-4 h-4 flex-shrink-0"
+                      checked={q.expectedAnswer.includes(opt)}
+                      onChange={() =>
+                        q.type === "single"
+                          ? onSetSingleExpected(index, opt)
+                          : onToggleExpected(index, opt)
+                      }
+                    />
+                    <input
+                      type="text"
+                      placeholder={`Option ${i + 1}`}
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition"
+                      value={opt}
+                      onChange={(e) => onOptionChange(index, i, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Text expected answer */}
+          {q.type === "text" && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Example Answer</label>
+              <textarea
+                placeholder="Expected answer(s) — paragraph supported"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition overflow-hidden resize-none"
+                value={q.expectedAnswer || ""}
+                onInput={(e) => {
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                  onChange(index, "expectedAnswer", e.target.value);
+                }}
+              />
+            </div>
+          )}
+
+          {/* Rubric & Max score */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Focus Point / Rubric</label>
+              <textarea
+                placeholder="Grading rubric for this question..."
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition resize-none"
+                rows={2}
+                value={q.rubric}
+                onChange={(e) => onChange(index, "rubric", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Max Score</label>
+              <input
+                type="number"
+                min="1"
+                placeholder="10"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition"
+                value={q.rubricMaxScore}
+                onChange={(e) => onChange(index, "rubricMaxScore", parseInt(e.target.value))}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -304,13 +399,8 @@ const CreateQuiz = () => {
     const updated = [...questions];
     const oldOption = updated[qIndex].options[optIndex];
     updated[qIndex].options[optIndex] = value;
-    if (
-      updated[qIndex].expectedAnswer.includes(oldOption) &&
-      value.trim() !== oldOption
-    ) {
-      updated[qIndex].expectedAnswer = updated[qIndex].expectedAnswer.filter(
-        (ans) => ans !== oldOption
-      );
+    if (updated[qIndex].expectedAnswer.includes(oldOption) && value.trim() !== oldOption) {
+      updated[qIndex].expectedAnswer = updated[qIndex].expectedAnswer.filter((ans) => ans !== oldOption);
     }
     setQuestions(updated);
   };
@@ -349,30 +439,19 @@ const CreateQuiz = () => {
     }
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
-      if (!q.question.trim()) {
-        alert(`Please fill in question ${i + 1}.`);
-        return false;
-      }
+      if (!q.question.trim()) { alert(`Please fill in question ${i + 1}.`); return false; }
       if (q.type !== "text" && q.options.some((opt) => !opt.trim())) {
-        alert(`Please complete all options in question ${i + 1}.`);
-        return false;
+        alert(`Please complete all options in question ${i + 1}.`); return false;
       }
       if (
-        (q.type === "text" &&
-          (!q.expectedAnswer || q.expectedAnswer.trim() === "")) ||
-        ((q.type === "single" || q.type === "multiple") &&
-          (!Array.isArray(q.expectedAnswer) || q.expectedAnswer.length === 0))
+        (q.type === "text" && (!q.expectedAnswer || q.expectedAnswer.trim() === "")) ||
+        ((q.type === "single" || q.type === "multiple") && (!Array.isArray(q.expectedAnswer) || q.expectedAnswer.length === 0))
       ) {
-        alert(`Please fill the expected answer for question ${i + 1}.`);
-        return false;
+        alert(`Please fill the expected answer for question ${i + 1}.`); return false;
       }
-      if (!q.rubric.trim()) {
-        alert(`Please fill in the rubric for question ${i + 1}.`);
-        return false;
-      }
+      if (!q.rubric.trim()) { alert(`Please fill in the rubric for question ${i + 1}.`); return false; }
       if (!q.rubricMaxScore || q.rubricMaxScore <= 0) {
-        alert(`Please set a valid max score for question ${i + 1}.`);
-        return false;
+        alert(`Please set a valid max score for question ${i + 1}.`); return false;
       }
     }
     return true;
@@ -385,25 +464,18 @@ const CreateQuiz = () => {
 
     const transformedQuestions = questions.map((q) => ({
       text: q.question,
-      type:
-        q.type === "text"
-          ? "text"
-          : q.type === "single"
-          ? "single_choice"
-          : "multi_choice",
-      options:
-        q.type === "text" ? [] : q.options.filter((opt) => opt.trim() !== ""),
-      expected_answer:
-        q.type === "text" ? [q.expectedAnswer || ""] : q.expectedAnswer,
+      type: q.type === "text" ? "text" : q.type === "single" ? "single_choice" : "multi_choice",
+      options: q.type === "text" ? [] : q.options.filter((opt) => opt.trim() !== ""),
+      expected_answer: q.type === "text" ? [q.expectedAnswer || ""] : q.expectedAnswer,
       rubric: q.rubric,
       rubric_max_score: q.rubricMaxScore,
     }));
 
     const payload = {
       title: quizTitle,
-      description: description,
-      start_time: start_time,
-      end_time: end_time,
+      description,
+      start_time,
+      end_time,
       duration: parseInt(duration),
       questions: transformedQuestions,
       completed: false,
@@ -412,8 +484,7 @@ const CreateQuiz = () => {
     try {
       const createResponse = await creatQuizWithQuestions(payload);
       if (createResponse.status == 200) {
-        const quiz_id = createResponse.data.quiz_id;
-        navigate(`/success-create/${quiz_id}`);
+        navigate(`/success-create/${createResponse.data.quiz_id}`);
       }
     } catch (error) {
       console.log("error :", error);
@@ -433,274 +504,165 @@ const CreateQuiz = () => {
         />
       )}
 
-      <div className="mx-auto">
-        <div className="bg-blue-50 px-6 py-12 rounded-t-lg">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Create New Quiz
-          </h2>
-          <p className="text-sm text-gray-600">
-            Fill in the details below to design your quiz. AI will assist in
-            evaluating student responses later.
-          </p>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue to-blue-700 px-6 sm:px-10 py-10">
+          <div className="absolute inset-0 opacity-10"
+            style={{ backgroundImage: "radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }}
+          />
+          <div className="relative">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">Create New Quiz</h2>
+            <p className="text-blue-100 text-sm">
+              Fill in the details below. AI will assist in evaluating student responses.
+            </p>
+          </div>
+          <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white opacity-5" />
         </div>
 
-        <div className="mx-32 mt-8 px-12 py-8 rounded-4xl shadow-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-lg font-semibold">Quiz Title</h2>
-            <div className="relative group">
-              <AiOutlineQuestionCircle
-                className="text-gray-500 cursor-pointer"
-                data-tooltip-id="quiz-title-tip"
-              />
-              <Tooltip
-                id="quiz-title-tip"
-                place="right"
-                content="This is the name of your quiz shown to students."
-              />
-            </div>
-          </div>
-          <input
-            type="text"
-            placeholder="e.g. Introduction to Philosophy Quiz"
-            className="w-full mb-4 px-4 py-2 border border-gray-200 rounded-xl"
-            value={quizTitle}
-            onChange={(e) => setQuizTitle(e.target.value)}
-          />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+          {/* Quiz details card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h3 className="text-base font-semibold text-gray-800 mb-5 pb-3 border-b border-gray-100">
+              Quiz Details
+            </h3>
 
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-lg font-semibold">Description (optional)</h2>
-            <div className="relative group">
-              <AiOutlineQuestionCircle
-                className="text-gray-500 cursor-pointer"
-                data-tooltip-id="quiz-description-tip"
-              />
-              <Tooltip
-                id="quiz-description-tip"
-                place="right"
-                content="You can explained the details of the quiz"
-              />
-            </div>
-          </div>
-          <textarea
-            placeholder="Write a short description about this quiz..."
-            className="w-full mb-3 px-4 py-2 border border-gray-200 rounded-xl"
-            value={description}
-            onChange={(e) => {
-              const input = e.target.value;
-              const words = input.trim().split(/\s+/);
-              if (words.length <= 200) {
-                setDescription(input);
-              } else {
-                setDescription(words.slice(0, 200).join(" "));
-              }
-            }}
-          />
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <label className="text-sm font-medium text-gray-700">Quiz Title</label>
+                  <AiOutlineQuestionCircle className="text-gray-400 cursor-pointer" data-tooltip-id="quiz-title-tip" size={14} />
+                  <Tooltip id="quiz-title-tip" place="right" content="This is the name of your quiz shown to students." />
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. Introduction to Philosophy Quiz"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition"
+                  value={quizTitle}
+                  onChange={(e) => setQuizTitle(e.target.value)}
+                />
+              </div>
 
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-lg font-semibold">Focus Point Quiz</h2>
-            <div className="relative group">
-              <AiOutlineQuestionCircle
-                className="text-gray-500 cursor-pointer"
-                data-tooltip-id="quiz-focus-tip"
-              />
-              <Tooltip
-                id="quiz-focus-tip"
-                place="right"
-                content={`You can add the focus point that will analyze by AI\n Example: Participants can explain their answers in detail using concise and fundamental language.`}
-              />
-            </div>
-          </div>
-          <textarea
-            placeholder="Write a short description the focus point."
-            className="w-full mb-3 px-4 py-2 border border-gray-200 rounded-xl"
-            value={overallNotes}
-            onChange={(e) => setOverallNotes(e.target.value)}
-          />
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <label className="text-sm font-medium text-gray-700">Description <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <AiOutlineQuestionCircle className="text-gray-400 cursor-pointer" data-tooltip-id="quiz-description-tip" size={14} />
+                  <Tooltip id="quiz-description-tip" place="right" content="A short description shown to students before they start." />
+                </div>
+                <textarea
+                  placeholder="Write a short description about this quiz..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition resize-none"
+                  rows={3}
+                  value={description}
+                  onChange={(e) => {
+                    const words = e.target.value.trim().split(/\s+/);
+                    if (words.length <= 200) setDescription(e.target.value);
+                    else setDescription(words.slice(0, 200).join(" "));
+                  }}
+                />
+                <p className="text-xs text-gray-400 mt-1 text-right">
+                  {description.trim().split(/\s+/).filter(Boolean).length}/200 words
+                </p>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Due Date
-              </label>
-              <input
-                type="date"
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Due Time
-              </label>
-              <input
-                type="time"
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl"
-                value={dueTime}
-                onChange={(e) => setDueTime(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Duration (minutes)
-              </label>
-              <input
-                type="number"
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl"
-                min="1"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-              />
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <label className="text-sm font-medium text-gray-700">Focus Point</label>
+                  <AiOutlineQuestionCircle className="text-gray-400 cursor-pointer" data-tooltip-id="quiz-focus-tip" size={14} />
+                  <Tooltip id="quiz-focus-tip" place="right" content="Key areas AI will focus on when evaluating student answers." />
+                </div>
+                <textarea
+                  placeholder="e.g. Participants can explain their answers using concise and fundamental language."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition resize-none"
+                  rows={2}
+                  value={overallNotes}
+                  onChange={(e) => setOverallNotes(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Due Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Due Time</label>
+                  <input
+                    type="time"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition"
+                    value={dueTime}
+                    onChange={(e) => setDueTime(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Duration (min)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 60"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue/30 focus:bg-white transition"
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Questions header with generate button */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Questions</h2>
+          {/* Questions card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-semibold text-gray-800">Questions</h3>
+                <span className="text-xs bg-blue-50 text-blue px-2 py-0.5 rounded-full font-medium">
+                  {questions.length}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowGenerateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-blue text-blue text-sm hover:bg-blue-50 transition cursor-pointer font-medium"
+              >
+                <FiZap size={14} />
+                Generate with AI
+              </button>
+            </div>
+
+            {questions.map((q, index) => (
+              <QuestionCard
+                key={index}
+                q={q}
+                index={index}
+                onRemove={removeQuestion}
+                onChange={handleQuestionChange}
+                onOptionChange={handleOptionChange}
+                onToggleExpected={toggleExpectedAnswer}
+                onSetSingleExpected={setSingleExpectedAnswer}
+              />
+            ))}
+
             <button
-              onClick={() => setShowGenerateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-blue text-blue text-sm hover:bg-blue-50 transition cursor-pointer"
+              onClick={addQuestion}
+              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-blue hover:text-blue hover:bg-blue-50 transition cursor-pointer font-medium mt-2"
             >
-              <FiZap size={14} />
-              Generate from Document
+              <PlusCircle size={16} /> Add Question
             </button>
           </div>
 
-          {questions.map((q, index) => (
-            <div
-              key={index}
-              className="bg-blue-50 border rounded-4xl border-orange-200 p-8 mb-6"
-            >
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Question
-              </label>
-              <input
-                type="text"
-                placeholder="Write your question here..."
-                className="w-full mb-3 px-3 py-2 border border-gray-300 rounded-xl"
-                value={q.question}
-                onChange={(e) =>
-                  handleQuestionChange(index, "question", e.target.value)
-                }
-              />
-
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Answer Type
-              </label>
-              <select
-                className="w-full mb-3 px-3 py-2 border border-gray-300 rounded-xl"
-                value={q.type}
-                onChange={(e) =>
-                  handleQuestionChange(index, "type", e.target.value)
-                }
-              >
-                <option value="text">Text</option>
-                <option value="single">Single Choice</option>
-                <option value="multiple">Multiple Choice</option>
-              </select>
-
-              {(q.type === "single" || q.type === "multiple") && (
-                <div className="space-y-2 mb-3">
-                  <label className="block font-semibold text-sm text-gray-700 mb-1">
-                    Answer Options
-                  </label>
-                  {q.options.map((opt, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <input
-                        type={q.type === "single" ? "radio" : "checkbox"}
-                        name={`expected-${index}`}
-                        className="accent-blue-600"
-                        checked={q.expectedAnswer.includes(opt)}
-                        onChange={() =>
-                          q.type === "single"
-                            ? setSingleExpectedAnswer(index, opt)
-                            : toggleExpectedAnswer(index, opt)
-                        }
-                      />
-                      <input
-                        type="text"
-                        placeholder={`Option ${i + 1}`}
-                        className="w-full px-3 py-2 border rounded"
-                        value={opt}
-                        onChange={(e) =>
-                          handleOptionChange(index, i, e.target.value)
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {q.type === "text" && (
-                <>
-                  <label className="block font-semibold text-sm text-gray-700 mb-1">
-                    Example Answer (optional)
-                  </label>
-                  <textarea
-                    placeholder="Expected answer(s), paragraph supported"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl overflow-hidden resize-none"
-                    value={q.expectedAnswer || ""}
-                    onInput={(e) => {
-                      e.target.style.height = "auto";
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                      handleQuestionChange(index, "expectedAnswer", e.target.value);
-                    }}
-                  />
-                </>
-              )}
-
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Focus Point
-              </label>
-              <textarea
-                placeholder="Rubric for this question..."
-                className="w-full mb-3 px-3 py-2 border rounded"
-                value={q.rubric}
-                onChange={(e) =>
-                  handleQuestionChange(index, "rubric", e.target.value)
-                }
-              />
-
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Max Score
-              </label>
-              <input
-                type="number"
-                min="1"
-                placeholder="Maximum score for this question"
-                className="w-full mb-3 px-3 py-2 border rounded"
-                value={q.rubricMaxScore}
-                onChange={(e) =>
-                  handleQuestionChange(index, "rubricMaxScore", parseInt(e.target.value))
-                }
-              />
-
-              <div className="text-right mt-3">
-                <button
-                  onClick={() => removeQuestion(index)}
-                  className="text-red-500 text-sm hover:underline cursor-pointer"
-                >
-                  Remove Question
-                </button>
-              </div>
-            </div>
-          ))}
-
-          <button
-            onClick={addQuestion}
-            className="text-blue cursor-pointer border border-blue px-4 py-2 rounded mb-6 hover:bg-blue-50"
-          >
-            + Add Question
-          </button>
-
-          <div className="flex justify-end gap-4">
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
             <button
-              onClick={() => {
-                if (validateQuiz()) {
-                  saveQuiz();
-                }
-              }}
-              className="px-4 py-2 rounded bg-blue text-white hover:bg-blue-600 cursor-pointer"
+              onClick={() => navigate(-1)}
+              className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer font-medium transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => { if (validateQuiz()) saveQuiz(); }}
+              className="px-6 py-2.5 rounded-xl bg-blue text-white text-sm font-medium hover:bg-blue-600 cursor-pointer transition shadow-sm"
             >
               Publish Quiz
             </button>
