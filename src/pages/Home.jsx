@@ -8,6 +8,7 @@ import { getAllUserQuizzes, getUser } from "../services/user";
 import { joinQuiz } from "../services/quiz";
 import LoadingScreen from "../components/LoadingScreen";
 
+// comment
 const Home = () => {
   const [rawDummyActivities, setRawDummyActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
