@@ -22,7 +22,7 @@ const initialQuestion = {
 };
 
 const draftToQuestion = (draft) => {
-  const isChoice = draft.type === "MULTI_CHOICE" || draft.options?.length > 0;
+  const isChoice = draft.type === "multi_choice" || draft.type === "MULTI_CHOICE" || (draft.options != null && draft.options.length > 0);
   const type =
     !isChoice
       ? "text"
@@ -37,7 +37,7 @@ const draftToQuestion = (draft) => {
       isChoice
         ? [...(draft.options ?? []), ...Array(Math.max(0, 4 - (draft.options?.length ?? 0))).fill("")]
         : ["", "", "", ""],
-    expectedAnswer: isChoice ? (draft.expected_answer ?? []) : [],
+    expectedAnswer: isChoice ? (draft.expected_answer ?? []) : (draft.expected_answer ?? []).join("\n"),
     rubric: draft.rubric ?? "",
     rubricMaxScore: draft.rubric_max_score ?? 10,
   };
@@ -49,7 +49,7 @@ const GenerateModal = ({ onClose, onAppend }) => {
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [selectedDocId, setSelectedDocId] = useState("");
   const [outcomes, setOutcomes] = useState([
-    { outcome: "", questions_per_outcome: 2 },
+    { outcome: "", mcq_count: 2, essay_count: 0 },
   ]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
@@ -69,7 +69,7 @@ const GenerateModal = ({ onClose, onAppend }) => {
   }, []);
 
   const addOutcome = () =>
-    setOutcomes((prev) => [...prev, { outcome: "", questions_per_outcome: 2 }]);
+    setOutcomes((prev) => [...prev, { outcome: "", mcq_count: 2, essay_count: 0 }]);
 
   const removeOutcome = (i) =>
     setOutcomes((prev) => prev.filter((_, idx) => idx !== i));
@@ -84,6 +84,9 @@ const GenerateModal = ({ onClose, onAppend }) => {
     if (!selectedDocId) { setError("Please select a document."); return; }
     if (outcomes.some((o) => !o.outcome.trim())) {
       setError("Please fill in all learning outcome fields."); return;
+    }
+    if (outcomes.some((o) => (Number(o.mcq_count) || 0) === 0 && (Number(o.essay_count) || 0) === 0)) {
+      setError("Each outcome must have at least one MCQ or essay question."); return;
     }
     setIsGenerating(true);
     try {
@@ -106,7 +109,8 @@ const GenerateModal = ({ onClose, onAppend }) => {
       setStatusMsg("Generating questions…");
       const payload = outcomes.map((o) => ({
         outcome: o.outcome.trim(),
-        questions_per_outcome: Number(o.questions_per_outcome) || 1,
+        mcq_count: Number(o.mcq_count) || 0,
+        essay_count: Number(o.essay_count) || 0,
       }));
       const res = await generateQuestions(Number(selectedDocId), payload);
       if (res.status === 200) {
@@ -180,16 +184,29 @@ const GenerateModal = ({ onClose, onAppend }) => {
                   value={o.outcome}
                   onChange={(e) => updateOutcome(i, "outcome", e.target.value)}
                 />
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Questions per outcome:</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    className="w-14 px-2 py-1 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue/30"
-                    value={o.questions_per_outcome}
-                    onChange={(e) => updateOutcome(i, "questions_per_outcome", e.target.value)}
-                  />
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-500">Multiple Choice:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="5"
+                      className="w-12 px-2 py-1 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue/30"
+                      value={o.mcq_count}
+                      onChange={(e) => updateOutcome(i, "mcq_count", e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-500">Essay:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="5"
+                      className="w-12 px-2 py-1 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue/30"
+                      value={o.essay_count}
+                      onChange={(e) => updateOutcome(i, "essay_count", e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
               {outcomes.length > 1 && (
