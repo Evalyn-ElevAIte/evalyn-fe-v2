@@ -138,32 +138,30 @@ const MyQuizzes = () => {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue to-blue-700 px-6 sm:px-10 py-10">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: "radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }}
-        />
-        <div className="relative">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">My Quizzes</h2>
-          <p className="text-blue-100 text-sm">
-            Manage your quizzes and track student submissions.
-          </p>
-          <div className="flex gap-4 mt-4">
-            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
-              <div className="text-xl font-bold text-white">{myQuizzes.length}</div>
-              <div className="text-blue-100 text-xs">Created</div>
-            </div>
-            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
-              <div className="text-xl font-bold text-white">{enrolledQuizzes.length}</div>
-              <div className="text-blue-100 text-xs">Enrolled</div>
-            </div>
+    <div className="min-h-screen bg-white">
+      <div className="h-1 w-full bg-gradient-to-r from-blue via-blue/60 to-orange" />
+
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 pt-10 pb-6">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Library</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">My Quizzes</h1>
+            <p className="text-sm text-gray-400">Manage your quizzes and track student submissions.</p>
+          </div>
+          <div className="flex gap-3 mt-1">
+            {[
+              { label: "Created", value: myQuizzes.length, color: "text-blue" },
+              { label: "Enrolled", value: enrolledQuizzes.length, color: "text-orange" },
+            ].map(s => (
+              <div key={s.label} className="rounded-xl border border-gray-100 px-4 py-2.5 flex items-center gap-2 shadow-sm bg-white">
+                <p className={`text-xl font-bold leading-none ${s.color}`}>{s.value}</p>
+                <p className="text-xs text-gray-400">{s.label}</p>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white opacity-5" />
-      </div>
 
-      <div className="px-6 sm:px-10 py-6">
+      <div className="px-0">
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
           <div className="relative flex-1 max-w-sm">
@@ -247,6 +245,7 @@ const MyQuizzes = () => {
             onPageChange={setCurrentPageEnrolled}
           />
         </div>
+      </div>
       </div>
     </div>
   );

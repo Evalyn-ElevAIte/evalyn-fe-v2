@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { FaEnvelope, FaLock, FaArrowLeft } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import HeroBg from "../assets/images/hero_bg.png";
 import { toast, ToastContainer } from "react-toastify";
 import { login } from "../services/auth";
-import LoadingScreen from "../components/LoadingScreen";
+import EvalynLogo from "../assets/logo/evalyn_logo.png";
 import "react-toastify/dist/ReactToastify.css";
 
 const SignIn = () => {
@@ -12,106 +11,112 @@ const SignIn = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const signInHandle = async () => {
+  const signInHandle = async (e) => {
+    e.preventDefault();
     setIsLoading(true);
     try {
       const signInResponse = await login(email, password);
       if (signInResponse.status === 200) {
-        const access_token = signInResponse.data.access_token;
-        localStorage.setItem("evalyn_token", access_token);
-        toast.success("Sign in successful! Redirecting...");
-        setTimeout(() => navigate("/home"), 3000);
+        localStorage.setItem("evalyn_token", signInResponse.data.access_token);
+        navigate("/home");
       }
     } catch (error) {
-      console.log("error :", error);
-      toast.error("Failed to sign in. Please check your credentials.");
+      toast.error("Invalid email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-[#f3faff] bg-cover bg-center px-6 py-12"
-      style={{ backgroundImage: `url(${HeroBg})` }}
-    >
-      {isLoading && <LoadingScreen />}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        toastClassName="bg-white shadow-lg rounded-xl"
-        bodyClassName="text-base font-semibold"
-      />
+    <div className="min-h-screen bg-[#F8FBFF] flex items-center justify-center px-4 py-12">
+      <ToastContainer position="top-right" autoClose={3000} />
 
-      <div className="bg-white border border-yellow-300 rounded-3xl shadow-2xl w-full max-w-5xl flex flex-col md:flex-row overflow-hidden">
-        {/* Left Section */}
-        <div className="w-full md:w-1/2 px-8 py-12 sm:px-12 sm:py-16 bg-white flex flex-col justify-center items-center border-b md:border-b-0 md:border-r border-yellow-300 text-center">
-          <FaArrowLeft className="text-blue-500 text-4xl mb-6" />
-          <h3 className="text-2xl sm:text-3xl font-bold text-blue-500 mb-2">
-            Welcome Back!
-          </h3>
-          <p className="text-sm sm:text-base text-gray-600 mb-8 max-w-sm">
-            Please enter your credentials to access your account
-          </p>
-          <p className="text-sm text-yellow-500 italic mb-2">
-            Don’t have an account?
-          </p>
-          <Link
-            to="/signup"
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-8 py-3 rounded-md shadow-md text-sm sm:text-base"
-          >
-            Sign up
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <Link to="/">
+            <img src={EvalynLogo} alt="Evalyn" className="h-10 w-auto" />
           </Link>
         </div>
 
-        {/* Right Section: Form */}
-        <div className="bg-[#eaf6ff] w-full md:w-1/2 px-8 py-12 sm:px-12 sm:py-16 flex flex-col justify-center">
-          <h2 className="text-2xl sm:text-4xl font-bold text-blue-500 mb-2">
-            Sign in to <span className="text-yellow-500">Evalyn</span>
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 mb-10">
-            Insert your account below:
-          </p>
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-8 py-10">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h1>
+          <p className="text-sm text-gray-500 mb-8">Sign in to your Evalyn account</p>
 
-          <form
-            className="flex flex-col gap-6"
-            onSubmit={(e) => {
-              e.preventDefault();
-              signInHandle();
-            }}
-          >
-            <div className="flex items-center gap-3 border border-yellow-400 rounded-full px-5 py-3 bg-white w-full">
-              <FaEnvelope className="text-yellow-500 text-lg" />
-              <input
-                type="email"
-                placeholder="Email"
-                className="outline-none flex-1 text-sm sm:text-base bg-transparent placeholder-gray-400"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+          <form onSubmit={signInHandle} className="flex flex-col gap-5">
+            {/* Email */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Email
+              </label>
+              <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/10 transition-all">
+                <FaEnvelope className="text-gray-400 text-sm shrink-0" />
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                  className="outline-none flex-1 text-sm bg-transparent placeholder-gray-300 text-gray-800"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 border border-yellow-400 rounded-full px-5 py-3 bg-white w-full">
-              <FaLock className="text-yellow-500 text-lg" />
-              <input
-                type="password"
-                placeholder="Password"
-                className="outline-none flex-1 text-sm sm:text-base bg-transparent placeholder-gray-400"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            {/* Password */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Password
+              </label>
+              <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/10 transition-all">
+                <FaLock className="text-gray-400 text-sm shrink-0" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  required
+                  className="outline-none flex-1 text-sm bg-transparent placeholder-gray-300 text-gray-800"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                </button>
+              </div>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 rounded-2xl shadow-lg mt-4 text-sm sm:text-lg"
+              disabled={isLoading}
+              className="w-full bg-blue text-white font-semibold py-3.5 rounded-xl shadow-sm hover:bg-blue/90 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
-              Sign in
+              {isLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                "Sign in"
+              )}
             </button>
           </form>
         </div>
+
+        {/* Footer link */}
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-blue font-semibold hover:underline">
+            Sign up for free
+          </Link>
+        </p>
       </div>
     </div>
   );

@@ -15,19 +15,21 @@ const supportedLogos = [
 
 const SupportedBy = () => {
   return (
-    <div className="mt-12 sm:mt-16 text-center px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12 pb-16 sm:pb-24">
-      <h4 className="text-gray-500 mb-6 text-xs sm:text-sm font-medium uppercase tracking-wider">
-        Supported by
-      </h4>
-      <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-8 md:gap-12">
-        {supportedLogos.map((logo) => (
-          <img
-            key={logo.name}
-            src={logo.src}
-            alt={logo.name}
-            className="h-10 sm:h-14 md:h-20 object-contain max-w-[140px]"
-          />
-        ))}
+    <div className="bg-white border-y border-gray-100 py-10 px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <p className="text-center text-xs font-semibold uppercase tracking-widest text-gray-400 mb-8">
+          Supported by
+        </p>
+        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-14">
+          {supportedLogos.map((logo) => (
+            <img
+              key={logo.name}
+              src={logo.src}
+              alt={logo.name}
+              className="h-8 sm:h-10 md:h-12 object-contain max-w-[120px] opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0"
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

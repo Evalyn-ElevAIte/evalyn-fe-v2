@@ -1,51 +1,108 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { FaFacebookF, FaInstagram, FaTwitter } from "react-icons/fa";
 import EvalynLogo from "../../assets/logo/evalyn_logo.png";
 
 const Footer = () => {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="bg-white border-t border-gray-200 px-6 py-12">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-        {/* Left: Logo and Description */}
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-4">
-            <img src={EvalynLogo} alt="Evalyn Logo" className="w-24 m-4" />
+    <footer id="footer" className="bg-gray-950 text-gray-400">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-16 pb-8">
+        {/* Top grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+          {/* Brand */}
+          <div className="lg:col-span-2">
+            <img src={EvalynLogo} alt="Evalyn" className="h-8 w-auto mb-4 brightness-0 invert" />
+            <p className="text-sm leading-relaxed max-w-sm">
+              Evalyn is an AI-powered assessment platform that helps teachers
+              create quizzes, grade submissions, and track student performance —
+              all in one place.
+            </p>
+            <div className="flex gap-3 mt-6">
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noreferrer"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-blue/80 flex items-center justify-center transition-colors"
+                aria-label="Twitter"
+              >
+                <FaTwitter size={14} className="text-white" />
+              </a>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-blue/80 flex items-center justify-center transition-colors"
+                aria-label="Facebook"
+              >
+                <FaFacebookF size={14} className="text-white" />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-blue/80 flex items-center justify-center transition-colors"
+                aria-label="Instagram"
+              >
+                <FaInstagram size={14} className="text-white" />
+              </a>
+            </div>
           </div>
-          <p className="text-gray-500 max-w-xl leading-relaxed text-sm md:text-base text-justify">
-            Evalyn is a platform where students and professors alike could
-            create custom quiz with AI powered analytical tool. With well
-            documented and easy to access performance Evalyn will help you
-            improve and adapt throughout your academic journey.
-          </p>
+
+          {/* Product links */}
+          <div>
+            <p className="text-white text-sm font-semibold mb-4">Product</p>
+            <ul className="space-y-3 text-sm">
+              {[
+                { label: "Features", href: "#services" },
+                { label: "How it works", href: "#how-it-works" },
+                { label: "Sign up", href: "/signup" },
+                { label: "Sign in", href: "/signin" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    className="hover:text-white transition-colors"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <p className="text-white text-sm font-semibold mb-4">Contact</p>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a
+                  href="mailto:support@evalyn.app"
+                  className="hover:text-white transition-colors"
+                >
+                  support@evalyn.app
+                </a>
+              </li>
+              <li className="text-gray-500 text-xs leading-relaxed">
+                For feedback, bug reports, or feature requests, reach out via
+                email or social media.
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* Right: Contact */}
-        <div className="flex flex-col items-center md:items-end gap-4">
-          <p className="text-gray-500 font-medium">Contact us</p>
-          <div className="flex flex-col gap-3">
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-white bg-blue-400 hover:bg-blue-500 p-3 rounded-full"
-            >
-              <FaTwitter />
+        {/* Divider */}
+        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-gray-600">
+            © {year} Evalyn. All rights reserved.
+          </p>
+          <div className="flex gap-5 text-xs">
+            <a href="#" className="hover:text-white transition-colors">
+              Privacy Policy
             </a>
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-white bg-blue hover:bg-blue-700 p-3 rounded-full"
-            >
-              <FaFacebookF />
-            </a>
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-blue border-2 border-blue p-3 rounded-full hover:bg-blue/10"
-            >
-              <FaInstagram />
+            <a href="#" className="hover:text-white transition-colors">
+              Terms of Service
             </a>
           </div>
         </div>

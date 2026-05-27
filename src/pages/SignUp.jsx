@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { FaEnvelope, FaLock, FaUser } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import HeroBg from "../assets/images/hero_bg.png";
 import { register } from "../services/auth";
 import { toast, ToastContainer } from "react-toastify";
+import EvalynLogo from "../assets/logo/evalyn_logo.png";
 import "react-toastify/dist/ReactToastify.css";
 
 const SignUp = () => {
@@ -13,120 +13,184 @@ const SignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const signUpHandle = async () => {
+  const signUpHandle = async (e) => {
+    e.preventDefault();
     if (password !== confirmPassword) {
-      toast.error("Please make sure your confirm password matches.");
-    } else {
-      try {
-        const signUpResponse = await register(name, email, password);
-        if (signUpResponse.status === 201) {
-          toast.success("Sign up successful! Redirecting to login...");
-          setTimeout(() => {
-            navigate("/signin");
-          }, 2500);
-        }
-      } catch (error) {
-        console.log("error :", error);
-        if (error.response?.data?.detail === "Email already registered") {
-          toast.error("Email already registered, please use another email!");
-        } else {
-          toast.error("Something went wrong. Please try again.");
-        }
+      toast.error("Passwords do not match.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const signUpResponse = await register(name, email, password);
+      if (signUpResponse.status === 201) {
+        toast.success("Account created! Redirecting to sign in…");
+        setTimeout(() => navigate("/signin"), 1500);
       }
+    } catch (error) {
+      if (error.response?.data?.detail === "Email already registered") {
+        toast.error("Email already registered. Please use another email.");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const passwordsMatch =
+    confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
+
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-[#f3faff] bg-cover bg-center px-6 py-12"
-      style={{ backgroundImage: `url(${HeroBg})` }}
-    >
+    <div className="min-h-screen bg-[#F8FBFF] flex items-center justify-center px-4 py-12">
       <ToastContainer position="top-right" autoClose={3000} />
-      <div className="bg-white border border-yellow-300 rounded-3xl shadow-2xl w-full max-w-5xl flex flex-col md:flex-row overflow-hidden">
-        {/* Left: Sign up form */}
-        <div className="bg-[#eaf6ff] w-full md:w-1/2 px-8 py-12 sm:px-12 sm:py-16 flex flex-col justify-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-blue-500 mb-4">
-            Create <span className="text-yellow-500">Account</span>
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 mb-10">
-            Insert your account below:
+
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <Link to="/">
+            <img src={EvalynLogo} alt="Evalyn" className="h-10 w-auto" />
+          </Link>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-8 py-10">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Create an account</h1>
+          <p className="text-sm text-gray-500 mb-8">
+            Join Evalyn and start building better assessments
           </p>
 
-          <form className="flex flex-col gap-6">
-            <div className="flex items-center gap-3 border border-yellow-400 rounded-full px-5 py-3 bg-white w-full">
-              <FaUser className="text-yellow-500 text-lg" />
-              <input
-                type="text"
-                placeholder="Name"
-                className="outline-none flex-1 text-sm sm:text-base bg-transparent placeholder-gray-300"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+          <form onSubmit={signUpHandle} className="flex flex-col gap-5">
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Full name
+              </label>
+              <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/10 transition-all">
+                <FaUser className="text-gray-400 text-sm shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  required
+                  className="outline-none flex-1 text-sm bg-transparent placeholder-gray-300 text-gray-800"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 border border-yellow-400 rounded-full px-5 py-3 bg-white w-full">
-              <FaEnvelope className="text-yellow-500 text-lg" />
-              <input
-                type="email"
-                placeholder="Email"
-                className="outline-none flex-1 text-sm sm:text-base bg-transparent placeholder-gray-300"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+            {/* Email */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Email
+              </label>
+              <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/10 transition-all">
+                <FaEnvelope className="text-gray-400 text-sm shrink-0" />
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                  className="outline-none flex-1 text-sm bg-transparent placeholder-gray-300 text-gray-800"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 border border-yellow-400 rounded-full px-5 py-3 bg-white w-full">
-              <FaLock className="text-yellow-500 text-lg" />
-              <input
-                type="password"
-                placeholder="Password"
-                className="outline-none flex-1 text-sm sm:text-base bg-transparent placeholder-gray-300"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            {/* Password */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Password
+              </label>
+              <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/10 transition-all">
+                <FaLock className="text-gray-400 text-sm shrink-0" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                  className="outline-none flex-1 text-sm bg-transparent placeholder-gray-300 text-gray-800"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 border border-yellow-400 rounded-full px-5 py-3 bg-white w-full">
-              <FaLock className="text-yellow-500 text-lg" />
-              <input
-                type="password"
-                placeholder="Confirm Password"
-                className="outline-none flex-1 text-sm sm:text-base bg-transparent placeholder-gray-300"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+            {/* Confirm password */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Confirm password
+              </label>
+              <div
+                className={`flex items-center gap-3 border rounded-xl px-4 py-3 bg-white focus-within:ring-2 transition-all ${
+                  passwordsMismatch
+                    ? "border-red-400 focus-within:ring-red-100"
+                    : passwordsMatch
+                    ? "border-green-400 focus-within:ring-green-100"
+                    : "border-gray-200 focus-within:border-blue focus-within:ring-blue/10"
+                }`}
+              >
+                <FaLock className="text-gray-400 text-sm shrink-0" />
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  placeholder="••••••••"
+                  required
+                  className="outline-none flex-1 text-sm bg-transparent placeholder-gray-300 text-gray-800"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showConfirm ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                </button>
+              </div>
+              {passwordsMismatch && (
+                <p className="text-xs text-red-500 mt-0.5">Passwords do not match</p>
+              )}
             </div>
 
+            {/* Submit */}
             <button
-              type="button"
-              onClick={signUpHandle}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 rounded-2xl shadow-lg mt-4 text-sm sm:text-lg"
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-blue text-white font-semibold py-3.5 rounded-xl shadow-sm hover:bg-blue/90 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
-              Sign up
+              {isLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creating account…
+                </>
+              ) : (
+                "Create account"
+              )}
             </button>
           </form>
         </div>
 
-        {/* Right: Welcome message */}
-        <div className="w-full md:w-1/2 px-8 py-12 sm:px-12 sm:py-16 flex flex-col justify-center items-center bg-white border-t md:border-t-0 md:border-l border-yellow-300">
-          <div className="text-yellow-500 text-6xl sm:text-7xl mb-8">🖐</div>
-          <h3 className="text-2xl sm:text-3xl font-bold text-blue-500 mb-4">
-            Hello, Fella!
-          </h3>
-          <p className="text-sm sm:text-base text-center text-gray-600 mb-6 max-w-md">
-            Enter your details and start the amazing journey with Evalyn!
-          </p>
-          <p className="text-sm text-yellow-500 italic mb-3">
-            Already have an account?
-          </p>
-          <Link
-            to="/signin"
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-md shadow-md text-sm sm:text-base"
-          >
+        {/* Footer link */}
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Already have an account?{" "}
+          <Link to="/signin" className="text-blue font-semibold hover:underline">
             Sign in
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   );

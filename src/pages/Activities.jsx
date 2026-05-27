@@ -151,42 +151,32 @@ const Activities = () => {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue to-blue-700 px-6 sm:px-10 py-10">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: "radial-gradient(circle at 20% 80%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }}
-        />
-        <div className="relative">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">Activity</h2>
-          <p className="text-blue-100 text-sm">
-            Track your latest actions — quizzes created, submitted, and graded.
-          </p>
-          <div className="flex gap-4 mt-4">
-            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
-              <div className="text-xl font-bold text-white">{activities.length}</div>
-              <div className="text-blue-100 text-xs">Total</div>
+    <div className="min-h-screen bg-white">
+      <div className="h-1 w-full bg-gradient-to-r from-blue via-blue/60 to-orange" />
+
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 pt-10 pb-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Overview</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Activity</h1>
+        <p className="text-sm text-gray-400 mb-6">
+          Track your latest actions — quizzes created, submitted, and graded.
+        </p>
+        <div className="flex gap-4 mb-2">
+          {[
+            { label: "Total", value: activities.length, color: "text-blue", bg: "bg-blue/10" },
+            { label: "Graded", value: activities.filter(a => getActivityMeta(a).type === "graded").length, color: "text-emerald-600", bg: "bg-emerald-50" },
+            { label: "Pending", value: activities.filter(a => getActivityMeta(a).type === "unfinished").length, color: "text-amber-500", bg: "bg-amber-50" },
+          ].map(s => (
+            <div key={s.label} className={`rounded-xl border border-gray-100 px-4 py-2.5 flex items-center gap-2.5 shadow-sm bg-white`}>
+              <p className={`text-xl font-bold leading-none ${s.color}`}>{s.value}</p>
+              <p className="text-xs text-gray-400">{s.label}</p>
             </div>
-            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
-              <div className="text-xl font-bold text-white">
-                {activities.filter(a => getActivityMeta(a).type === "graded").length}
-              </div>
-              <div className="text-blue-100 text-xs">Graded</div>
-            </div>
-            <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
-              <div className="text-xl font-bold text-white">
-                {activities.filter(a => getActivityMeta(a).type === "unfinished").length}
-              </div>
-              <div className="text-blue-100 text-xs">Pending</div>
-            </div>
-          </div>
+          ))}
         </div>
-        <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white opacity-5" />
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white border-b border-gray-100 px-6 sm:px-10 py-3 shadow-sm sticky top-[80px] z-10">
-        <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+      <div className="bg-white border-b border-gray-100 px-6 sm:px-8 py-3 sticky top-[64px] z-10">
+        <div className="max-w-5xl mx-auto flex items-center gap-2 overflow-x-auto pb-0.5">
           {FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -204,7 +194,7 @@ const Activities = () => {
       </div>
 
       {/* Activity list */}
-      <div className="px-6 sm:px-10 py-6">
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 py-6">
         {Object.entries(grouped).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">

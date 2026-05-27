@@ -504,22 +504,18 @@ const CreateQuiz = () => {
         />
       )}
 
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-blue to-blue-700 px-6 sm:px-10 py-10">
-          <div className="absolute inset-0 opacity-10"
-            style={{ backgroundImage: "radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }}
-          />
-          <div className="relative">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">Create New Quiz</h2>
-            <p className="text-blue-100 text-sm">
-              Fill in the details below. AI will assist in evaluating student responses.
-            </p>
-          </div>
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white opacity-5" />
+      <div className="min-h-screen bg-white">
+        <div className="h-1 w-full bg-gradient-to-r from-blue via-blue/60 to-orange" />
+
+        <div className="max-w-3xl mx-auto px-6 sm:px-8 pt-10 pb-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">New</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Create a Quiz</h1>
+          <p className="text-sm text-gray-400 mb-8">
+            Fill in the details below. AI will assist in evaluating student responses.
+          </p>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+        <div className="max-w-3xl mx-auto px-6 sm:px-8 pb-8">
           {/* Quiz details card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
             <h3 className="text-base font-semibold text-gray-800 mb-5 pb-3 border-b border-gray-100">

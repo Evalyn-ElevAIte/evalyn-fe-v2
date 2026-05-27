@@ -2,79 +2,112 @@ import React from "react";
 import support1 from "../../assets/images/support1.jpg";
 import support2 from "../../assets/images/support2.jpg";
 import support3 from "../../assets/images/support3.jpg";
-import { PiGraduationCapDuotone } from "react-icons/pi";
+import { FiArrowRight } from "react-icons/fi";
 
 const supportSteps = [
   {
     number: "01",
-    title: "Make a customizable quiz for all your academic purpose!",
+    label: "Create",
+    title: "Build a quiz in minutes",
+    description:
+      "Add questions, set time limits, and choose question types. Upload a document and let AI generate questions for you automatically.",
     image: support1,
+    accent: "bg-blue",
+    accentLight: "bg-blue/10 text-blue",
   },
   {
     number: "02",
-    title: "Quickly analyze the result, saving time for everyone!",
+    label: "Analyze",
+    title: "Instant AI-powered results",
+    description:
+      "Once students submit, our AI grades everything and surfaces actionable insights — no more manual marking.",
     image: support2,
+    accent: "bg-orange",
+    accentLight: "bg-orange/10 text-orange",
   },
   {
     number: "03",
-    title: "Track your performance, improve everyday!",
+    label: "Improve",
+    title: "Track growth over time",
+    description:
+      "Follow individual student progress across every quiz. Spot patterns, celebrate wins, and intervene early when needed.",
     image: support3,
+    accent: "bg-green-500",
+    accentLight: "bg-green-50 text-green-600",
   },
 ];
 
 const Support = () => {
   return (
-    <section className="bg-[#F3FAFF] py-20 px-10 sm:px-12">
-      {/* Header */}
-      <div className="text-center mb-16 sm:mb-24">
-        <PiGraduationCapDuotone
-          size={48}
-          className="text-yellow-500 mx-auto mb-4"
-        />
-        <h2 className="text-2xl sm:text-3xl font-bold">
-          We support every part of your lessons!
-        </h2>
-        <div className="w-24 sm:w-32 h-[3px] bg-yellow-500 mx-auto my-4 rounded" />
-        <p className="text-gray-600 text-sm sm:text-base">
-          Together we adapt for the better
-        </p>
-      </div>
+    <section id="how-it-works" className="bg-[#F8FBFF] py-24 px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center gap-2 bg-blue/10 text-blue text-xs font-semibold px-4 py-2 rounded-full mb-5 border border-blue/20">
+            How it works
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            Three steps to better teaching
+          </h2>
+          <p className="text-gray-500 text-base max-w-lg mx-auto">
+            From quiz creation to performance review — Evalyn handles the
+            heavy lifting so you can focus on your students.
+          </p>
+        </div>
 
-      {/* Timeline container */}
-      <div className="max-w-6xl mx-auto relative">
-        {/* Desktop vertical line */}
-        <div className="hidden md:block absolute left-6 top-0 bottom-0 w-[3px] bg-yellow-400 z-0" />
-
-        {/* Timeline items */}
-        <div className="flex flex-col gap-16 sm:gap-20 relative z-10">
+        {/* Steps */}
+        <div className="flex flex-col gap-24">
           {supportSteps.map((step, idx) => (
             <div
               key={idx}
-              className="flex flex-col md:flex-row md:items-start gap-8 md:gap-16"
+              className={`grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center ${
+                idx % 2 === 1 ? "lg:flex-row-reverse" : ""
+              }`}
+              style={{ direction: idx % 2 === 1 ? "rtl" : "ltr" }}
             >
-              {/* Left side: Text and number */}
-              <div className="relative md:w-1/2">
-                {/* Number circle */}
-                <div className="">
-                  <div className="md:absolute md:left-2 top-0 w-8 h-8 bg-yellow-500 rounded-full z-10 mb-4 md:mb-0" />
-                  <div className="text-yellow-500 text-5xl md:text-7xl font-bold mb-4 md:ml-16">
-                    {step.number}
-                  </div>
+              {/* Text side */}
+              <div style={{ direction: "ltr" }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <span
+                    className={`text-xs font-bold px-3 py-1 rounded-full ${step.accentLight}`}
+                  >
+                    {step.label}
+                  </span>
+                  <span className="text-gray-300 font-bold text-sm">
+                    Step {step.number}
+                  </span>
                 </div>
 
-                <p className="text-gray-700 text-lg sm:text-xl font-semibold md:ml-16">
+                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 leading-tight">
                   {step.title}
+                </h3>
+
+                <p className="text-gray-500 text-base leading-relaxed mb-6">
+                  {step.description}
                 </p>
+
+                <a
+                  href="/signup"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-blue hover:gap-3 transition-all"
+                >
+                  Try it now <FiArrowRight />
+                </a>
               </div>
 
-              {/* Right side: Image */}
-              <div className="md:w-2/5 transform transition duration-500 hover:rotate-x-3 hover:-rotate-y-2 hover:scale-105 perspective-1000">
-                <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-2">
+              {/* Image side */}
+              <div style={{ direction: "ltr" }}>
+                <div className="relative rounded-2xl overflow-hidden shadow-xl border border-gray-100 group">
                   <img
                     src={step.image}
-                    alt={`Support step ${step.number}`}
-                    className="rounded-lg object-cover w-full h-auto"
+                    alt={`Step ${step.number}: ${step.title}`}
+                    className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
                   />
+                  {/* Number overlay */}
+                  <div
+                    className={`absolute top-4 left-4 ${step.accent} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow`}
+                  >
+                    {step.number}
+                  </div>
                 </div>
               </div>
             </div>
