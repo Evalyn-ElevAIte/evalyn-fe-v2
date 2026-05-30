@@ -52,4 +52,22 @@ Vite proxies `/api/*` → the Railway backend (strips `/api` prefix), so you can
 
 ### Deployment
 
-Deployed to Netlify. `netlify.toml` has a catch-all redirect (`/* → /index.html`) for client-side routing.
+**Netlify** — `netlify.toml` has a catch-all redirect (`/* → /index.html`) for client-side routing.
+
+**Google Cloud Run** — also deployed at https://evalyn-fe-36261430683.asia-southeast1.run.app
+
+To redeploy to Cloud Run:
+
+```bash
+/home/haidarhanif/Work/projects/group-projects/evalyn/evalyn-backend/google-cloud-sdk/bin/gcloud run deploy evalyn-fe \
+  --source . \
+  --region asia-southeast1 \
+  --allow-unauthenticated \
+  --port 80 \
+  --project project-867fcb71-907e-452f-a3f
+```
+
+Notes:
+- `gcloud` lives inside the `evalyn-backend` repo's SDK, not on the system PATH — use the full path above
+- `.gcloudignore` controls what gets uploaded; `.env` is intentionally included so Vite bakes `VITE_*` vars into the build
+- The Dockerfile does a multi-stage build: Node 20 runs `pnpm build`, then nginx serves `dist/`

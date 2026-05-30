@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Calendar, Copy, Check, TrendingUp, TrendingDown, Award, Users, BarChart2, Trophy, AlertTriangle } from "lucide-react";
+import { Calendar, Copy, Check, TrendingUp, TrendingDown, Award, Users, BarChart2, Trophy, AlertTriangle, Flame, Smile } from "lucide-react";
 import {
   PieChart as RechartsChart,
   Pie,
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
 import { getQuizStatistics } from "../../services/assessments";
 
@@ -94,6 +93,28 @@ const PublishedQuizInfo = ({ quiz, quiz_id }) => {
   const avgPct = overview.average_percentage?.toFixed(1);
   const performers = activePerformTab === "top" ? overview.top_performers : overview.bottom_performers;
 
+  const passCount =
+    (overview.grade_distribution["A (90-100%)"] ?? 0) +
+    (overview.grade_distribution["B (80-89%)"] ?? 0) +
+    (overview.grade_distribution["C (70-79%)"] ?? 0) +
+    (overview.grade_distribution["D (60-69%)"] ?? 0);
+  const passRate = overview.total_assessments > 0
+    ? ((passCount / overview.total_assessments) * 100).toFixed(1)
+    : "—";
+
+  const scoreSpread = (overview.max_percentage - overview.min_percentage).toFixed(1);
+
+  const durationDays = overview.earliest_assessment && overview.latest_assessment
+    ? Math.round((new Date(overview.latest_assessment) - new Date(overview.earliest_assessment)) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const allQuestions = [
+    ...(overview.hardest_questions ?? []),
+    ...(overview.easiest_questions ?? []),
+  ];
+  const uniqueQuestions = [...new Map(allQuestions.map((q) => [q.question_id, q])).values()];
+  const strugglingQuestionCount = uniqueQuestions.filter((q) => q.struggling_students_percentage > 50).length;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -109,11 +130,18 @@ const PublishedQuizInfo = ({ quiz, quiz_id }) => {
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 truncate">{quiz.title}</h1>
             {overview.earliest_assessment && (
-              <p className="text-blue-100 text-sm flex items-center gap-1.5">
-                <Calendar size={13} />
-                {new Date(overview.earliest_assessment).toLocaleDateString()} —{" "}
-                {new Date(overview.latest_assessment).toLocaleDateString()}
-              </p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="text-blue-100 text-sm flex items-center gap-1.5">
+                  <Calendar size={13} />
+                  {new Date(overview.earliest_assessment).toLocaleDateString()} —{" "}
+                  {new Date(overview.latest_assessment).toLocaleDateString()}
+                </p>
+                {durationDays !== null && (
+                  <span className="text-xs bg-white/15 border border-white/20 text-white rounded-full px-2.5 py-0.5">
+                    {durationDays === 0 ? "Today" : `${durationDays}d active`}
+                  </span>
+                )}
+              </div>
             )}
           </div>
           {/* Join code chip */}
@@ -130,7 +158,7 @@ const PublishedQuizInfo = ({ quiz, quiz_id }) => {
 
       <div className="px-4 sm:px-8 py-6 max-w-5xl mx-auto">
         {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
           <StatCard
             label="Total Assessments"
             value={overview.total_assessments}
@@ -140,24 +168,31 @@ const PublishedQuizInfo = ({ quiz, quiz_id }) => {
           />
           <StatCard
             label="Average Score"
-            value={`${overview.average_score} / ${overview.max_score}`}
-            sub={`${avgPct}%`}
+            value={`${overview.average_percentage}%`}
+            sub={`${overview.average_score} pts avg`}
             accent="green"
             icon={TrendingUp}
           />
           <StatCard
             label="Highest Score"
-            value={overview.max_score}
-            sub="best performer"
+            value={`${overview.max_percentage}%`}
+            sub={`${overview.max_score} pts`}
             accent="orange"
             icon={Award}
           />
           <StatCard
-            label="Failing (F)"
-            value={overview.grade_distribution["F (0-59%)"] ?? 0}
-            sub="students below 60%"
+            label="Lowest Score"
+            value={`${overview.min_percentage}%`}
+            sub={`${overview.min_score} pts`}
             accent="red"
             icon={TrendingDown}
+          />
+          <StatCard
+            label="Pass Rate"
+            value={`${passRate}%`}
+            sub={`${passCount} of ${overview.total_assessments} passed`}
+            accent="green"
+            icon={Trophy}
           />
         </div>
 
@@ -167,29 +202,49 @@ const PublishedQuizInfo = ({ quiz, quiz_id }) => {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-4">Grade Distribution</h3>
             {gradeData.length > 0 ? (
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsChart>
-                    <Pie
-                      data={gradeData}
-                      cx="50%" cy="50%"
-                      outerRadius={80}
-                      innerRadius={35}
-                      dataKey="value"
-                      labelLine={false}
-                      label={({ name, percent }) => percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ""}
-                    >
-                      {gradeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip total={overview.total_assessments} />} />
-                    <Legend iconType="circle" iconSize={8} />
-                  </RechartsChart>
-                </ResponsiveContainer>
+              <div className="flex items-center gap-4">
+                <div className="h-44 w-44 flex-shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsChart>
+                      <Pie
+                        data={gradeData}
+                        cx="50%" cy="50%"
+                        outerRadius={70}
+                        innerRadius={32}
+                        dataKey="value"
+                        labelLine={false}
+                      >
+                        {gradeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip total={overview.total_assessments} />} />
+                    </RechartsChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 space-y-2">
+                  {gradeData.map((d) => (
+                    <div key={d.name} className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                      <span className="text-xs text-gray-600 w-16">Grade {d.name}</span>
+                      <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            backgroundColor: d.color,
+                            width: `${((d.value / overview.total_assessments) * 100).toFixed(0)}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 w-14 text-right">
+                        {d.value} ({((d.value / overview.total_assessments) * 100).toFixed(0)}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="h-56 flex items-center justify-center text-gray-400 text-sm">No graded submissions yet.</div>
+              <div className="h-44 flex items-center justify-center text-gray-400 text-sm">No graded submissions yet.</div>
             )}
           </div>
 
@@ -221,9 +276,61 @@ const PublishedQuizInfo = ({ quiz, quiz_id }) => {
                   <p className="text-xs text-blue-700">All students are performing above 60%. The class is on track.</p>
                 </div>
               )}
+              {parseFloat(scoreSpread) > 40 && (
+                <div className="flex gap-3 bg-amber-50 border border-amber-100 rounded-xl p-3.5">
+                  <AlertTriangle size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-amber-700">Large score gap of {scoreSpread}% between highest and lowest student — consider differentiated support.</p>
+                </div>
+              )}
+              {strugglingQuestionCount > 0 && (
+                <div className="flex gap-3 bg-red-50 border border-red-100 rounded-xl p-3.5">
+                  <Flame size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-red-700">{strugglingQuestionCount} question{strugglingQuestionCount !== 1 ? "s" : ""} had more than half the class struggling — review those topics.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Hardest / Easiest questions */}
+        {(overview.hardest_questions?.length > 0 || overview.easiest_questions?.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            {[
+              { key: "hardest_questions", label: "Hardest Questions", color: "red" },
+              { key: "easiest_questions", label: "Easiest Questions", color: "green" },
+            ].map(({ key, label, color }) => (
+              <div key={key} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  {color === "red"
+                    ? <Flame size={15} className="text-red-500" />
+                    : <Smile size={15} className="text-emerald-500" />
+                  }
+                  <h3 className="text-sm font-semibold text-gray-700">{label}</h3>
+                </div>
+                <div className="space-y-3">
+                  {overview[key].map((q, i) => (
+                    <div key={q.question_id} className="flex gap-3 items-start">
+                      <span className={`mt-0.5 w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold ${color === "red" ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-600"}`}>
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-700 line-clamp-2 leading-relaxed">{q.question_text}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <span className={`text-[11px] font-semibold ${color === "red" ? "text-red-500" : "text-emerald-600"}`}>
+                            {q.average_score_percentage.toFixed(1)}% avg
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            {q.struggling_students_count}/{q.total_students_answered} struggling ({q.struggling_students_percentage.toFixed(0)}%)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Performers table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -251,8 +358,8 @@ const PublishedQuizInfo = ({ quiz, quiz_id }) => {
                   <tr className="border-b border-gray-50 bg-gray-50">
                     <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
                     <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Student</th>
+                    <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Point</th>
                     <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Score</th>
-                    <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Percentage</th>
                     <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Grade</th>
                   </tr>
                 </thead>
@@ -277,7 +384,17 @@ const PublishedQuizInfo = ({ quiz, quiz_id }) => {
                           </div>
                         </td>
                         <td className="p-4 font-semibold text-blue">{s.score}/{s.max_score}</td>
-                        <td className="p-4 text-gray-600">{pct.toFixed(1)}%</td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${pct >= 80 ? "bg-emerald-400" : pct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+                                style={{ width: `${Math.min(pct, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-gray-600 text-sm">{pct.toFixed(1)}%</span>
+                          </div>
+                        </td>
                         <td className="p-4">
                           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${gradeStyle}`}>{grade}</span>
                         </td>
